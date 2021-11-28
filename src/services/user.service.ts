@@ -2,16 +2,21 @@ import { ApolloError } from 'apollo-server';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import Context from '../types/context';
+import log from '../logger';
 import { User, UserModel } from '../schemas/user.schema';
-import { LoginUserInput } from '../input/user/login-user.input';
 import { RegisterUserInput } from '../input/user/register-user.input';
 import { ConfirmUserInput } from '../input/user/confirm-user.input';
+import { LoginUserInput } from '../input/user/login-user.input';
+import { RemoveUserInput } from '../input/user/remove-user.input';
 import { sessionCookieId, sessionUserId } from '../consts/session.const';
 import { redis } from '../utils/redis/redis';
 import { generateConfirmToken } from '../utils/generate-confirm-token';
 import { sendEmail } from '../utils/mail/sendEmail';
 import { createConfirmUserUrl } from '../utils/mail/create-confirm-user-url';
-import log from '../logger';
+import { ForgotPasswordConfirmInput } from '../input/user/forgot-password-confirm.input';
+import { ForgotPasswordInput } from '../input/user/forgot-password.input';
+import { createForgotPasswordUrl } from '../utils/mail/create-forgot-password-url';
+import { generateForgotToken } from '../utils/generate-forgot-token';
 
 class UserService {
   async whoAmI(context: Context) {
@@ -52,7 +57,6 @@ class UserService {
         60 * 60 * 24,
       );
     };
-
     await confirmMail();
 
     return user;
@@ -110,6 +114,69 @@ class UserService {
     user.confirmed = true;
     await user.save();
     await redis.del(token);
+
+    return true;
+  }
+
+  async removeUser(input: RemoveUserInput, context: Context) {
+    if (!context.userId) {
+      return false;
+    }
+
+    const user = await UserModel.find().findById(context.userId);
+    if (!user) {
+      throw new ApolloError('Cannot remove user');
+    }
+
+    const passwordIsValid = await bcrypt.compare(input.password, user.password);
+    if (!passwordIsValid) {
+      throw new ApolloError('Invalid password');
+    }
+
+    await user.delete();
+    await this.logoutUser(context);
+
+    return true;
+  }
+
+  async forgotPassword(input: ForgotPasswordInput) {
+    const user = await UserModel.find().findByEmail(input.email);
+
+    if (!user) {
+      return false;
+    }
+
+    const forgotMail = async () => {
+      const token = nanoid(32);
+      const url = createForgotPasswordUrl(token);
+      await sendEmail(user.email, url, 'Reset password');
+      await redis.set(
+        generateForgotToken(token),
+        user.email,
+        'ex',
+        60 * 60 * 24,
+      );
+    };
+    await forgotMail();
+
+    return true;
+  }
+
+  async forgotPasswordConfirm(input: ForgotPasswordConfirmInput) {
+    const token = generateForgotToken(input.token);
+    const userEmail = await redis.get(token);
+    if (!userEmail) {
+      return false;
+    }
+
+    const user = await UserModel.find().findByEmail(userEmail);
+    if (!user) {
+      return false;
+    }
+
+    user.password = input.password;
+    await user.save();
+    await redis.del(token)
 
     return true;
   }
