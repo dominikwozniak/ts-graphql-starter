@@ -12,6 +12,7 @@ import { IsAuth } from '../middlewares/isAuth';
 import { User } from '../schemas/user.schema';
 import { RegisterUserInput } from '../input/user/register-user.input';
 import { LoginUserInput } from '../input/user/login-user.input';
+import { ConfirmUserInput } from '../input/user/confirm-user.input';
 
 @Resolver()
 export default class UserResolver {
@@ -20,7 +21,7 @@ export default class UserResolver {
   }
 
   @UseMiddleware(IsAuth)
-  @Query(() => User, { nullable: true, complexity: 5 })
+  @Query(() => User, { nullable: true })
   whoAmI(@Ctx() context: Context) {
     return this.userService.whoAmI(context);
   }
@@ -30,7 +31,7 @@ export default class UserResolver {
     return this.userService.createUser(input);
   }
 
-  @Mutation(() => User)
+  @Mutation(() => User, { nullable: true })
   loginUser(@Arg('input') input: LoginUserInput, @Ctx() context: Context) {
     return this.userService.loginUser(input, context);
   }
@@ -38,5 +39,10 @@ export default class UserResolver {
   @Mutation(() => Boolean)
   logoutUser(@Ctx() context: Context) {
     return this.userService.logoutUser(context);
+  }
+
+  @Mutation(() => Boolean)
+  confirmUser(@Arg('input') input: ConfirmUserInput) {
+    return this.userService.confirmUser(input)
   }
 }

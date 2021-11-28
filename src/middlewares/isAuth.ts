@@ -1,7 +1,7 @@
 import { MiddlewareFn } from 'type-graphql';
 import { ApolloError } from 'apollo-server';
 import Context from '../types/context';
-import { sessionUserId } from '../consts/session.consts';
+import { sessionUserId } from '../consts/session.const';
 
 export const IsAuth: MiddlewareFn<Context> = async ({ context }, next) => {
   // @ts-ignore

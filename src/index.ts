@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-
 dotenv.config();
 import config from 'config';
 import 'reflect-metadata';
@@ -14,10 +13,10 @@ import {
   ApolloServerPluginLandingPageProductionDefault,
 } from 'apollo-server-core';
 import { resolvers } from './resolvers';
-import { connectToMongo } from './utils/mongo';
-import { store } from './utils/mongo-session';
+import { connectToMongo } from './utils/mongo/mongo';
+import { store } from './utils/mongo/mongo-session';
 import Context from './types/context';
-import { sessionCookieId, sessionUserId } from './consts/session.consts';
+import { sessionCookieId, sessionUserId } from './consts/session.const';
 
 async function bootstrap() {
   const schema = await buildSchema({

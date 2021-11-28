@@ -53,6 +53,10 @@ export class User {
   @prop({ required: true })
   email: string;
 
+  @Field(() => Boolean)
+  @prop({ required: true, default: false })
+  confirmed: boolean;
+
   @prop({ required: true })
   password: string;
 }
