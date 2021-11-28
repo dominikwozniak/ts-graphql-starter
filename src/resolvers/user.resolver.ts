@@ -16,6 +16,7 @@ import { ConfirmUserInput } from '../input/user/confirm-user.input';
 import { RemoveUserInput } from '../input/user/remove-user.input';
 import { ForgotPasswordInput } from '../input/user/forgot-password.input';
 import { ForgotPasswordConfirmInput } from '../input/user/forgot-password-confirm.input';
+import { UpdateUserInput } from '../input/user/update-user.input';
 
 @Resolver()
 export default class UserResolver {
@@ -63,5 +64,11 @@ export default class UserResolver {
   @Mutation(() => Boolean)
   forgotPasswordConfirm(@Arg('input') input: ForgotPasswordConfirmInput) {
     return this.userService.forgotPasswordConfirm(input);
+  }
+
+  @UseMiddleware(IsAuth)
+  @Mutation(() => Boolean)
+  updateUser(@Arg('input') input: UpdateUserInput, @Ctx() context: Context) {
+    return this.userService.updateUser(input, context);
   }
 }

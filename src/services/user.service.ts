@@ -8,23 +8,28 @@ import { RegisterUserInput } from '../input/user/register-user.input';
 import { ConfirmUserInput } from '../input/user/confirm-user.input';
 import { LoginUserInput } from '../input/user/login-user.input';
 import { RemoveUserInput } from '../input/user/remove-user.input';
-import { sessionCookieId, sessionUserId } from '../consts/session.const';
-import { redis } from '../utils/redis/redis';
-import { generateConfirmToken } from '../utils/generate-confirm-token';
-import { sendEmail } from '../utils/mail/sendEmail';
-import { createConfirmUserUrl } from '../utils/mail/create-confirm-user-url';
 import { ForgotPasswordConfirmInput } from '../input/user/forgot-password-confirm.input';
 import { ForgotPasswordInput } from '../input/user/forgot-password.input';
+import { UpdateUserInput } from '../input/user/update-user.input';
+import { sessionCookieId, sessionUserId } from '../consts/session.const';
+import { redis } from '../utils/redis/redis';
+import { generateConfirmToken } from '../utils/token/generate-confirm-token';
+import { sendEmail } from '../utils/mail/sendEmail';
+import { createConfirmUserUrl } from '../utils/mail/create-confirm-user-url';
 import { createForgotPasswordUrl } from '../utils/mail/create-forgot-password-url';
-import { generateForgotToken } from '../utils/generate-forgot-token';
+import { generateForgotToken } from '../utils/token/generate-forgot-token';
 
 class UserService {
-  async whoAmI(context: Context) {
-    if (!context.userId) {
-      return undefined;
+  async findUserFromContext(userId: Context['userId']) {
+    if (!userId) {
+      throw new ApolloError('Authorization failed');
     }
 
-    const user = await UserModel.find().findById(context.userId);
+    return UserModel.find().findById(userId);
+  }
+
+  async whoAmI(context: Context) {
+    const user = await this.findUserFromContext(context.userId);
 
     if (!user) {
       throw new ApolloError('Invalid userId');
@@ -36,7 +41,7 @@ class UserService {
   async createUser(input: RegisterUserInput): Promise<User> {
     const found = await UserModel.find().findByEmail(input.email).lean();
 
-    if (!found) {
+    if (found) {
       throw new ApolloError('Cannot register with provided credentials');
     }
 
@@ -119,11 +124,8 @@ class UserService {
   }
 
   async removeUser(input: RemoveUserInput, context: Context) {
-    if (!context.userId) {
-      return false;
-    }
+    const user = await this.findUserFromContext(context.userId);
 
-    const user = await UserModel.find().findById(context.userId);
     if (!user) {
       throw new ApolloError('Cannot remove user');
     }
@@ -177,6 +179,17 @@ class UserService {
     user.password = input.password;
     await user.save();
     await redis.del(token)
+
+    return true;
+  }
+
+  async updateUser(input: UpdateUserInput, context: Context) {
+    const user = await this.findUserFromContext(context.userId);
+
+    if (!user) {
+      throw new ApolloError('Cannot update user');
+    }
+    await user.updateOne({ ...input });
 
     return true;
   }
