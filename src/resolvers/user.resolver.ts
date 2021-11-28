@@ -17,6 +17,7 @@ import { RemoveUserInput } from '../input/user/remove-user.input';
 import { ForgotPasswordInput } from '../input/user/forgot-password.input';
 import { ForgotPasswordConfirmInput } from '../input/user/forgot-password-confirm.input';
 import { UpdateUserInput } from '../input/user/update-user.input';
+import { ChangePasswordInput } from '../input/user/change-password.input';
 
 @Resolver()
 export default class UserResolver {
@@ -70,5 +71,14 @@ export default class UserResolver {
   @Mutation(() => Boolean)
   updateUser(@Arg('input') input: UpdateUserInput, @Ctx() context: Context) {
     return this.userService.updateUser(input, context);
+  }
+
+  @UseMiddleware(IsAuth)
+  @Mutation(() => Boolean)
+  changePassword(
+    @Arg('input') input: ChangePasswordInput,
+    @Ctx() context: Context,
+  ) {
+    return this.userService.changePassword(input, context);
   }
 }

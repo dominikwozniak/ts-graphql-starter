@@ -18,9 +18,10 @@ import { sendEmail } from '../utils/mail/sendEmail';
 import { createConfirmUserUrl } from '../utils/mail/create-confirm-user-url';
 import { createForgotPasswordUrl } from '../utils/mail/create-forgot-password-url';
 import { generateForgotToken } from '../utils/token/generate-forgot-token';
+import { ChangePasswordInput } from '../input/user/change-password.input';
 
 class UserService {
-  async findUserFromContext(userId: Context['userId']) {
+  async getUserFromContext(userId: Context['userId']) {
     if (!userId) {
       throw new ApolloError('Authorization failed');
     }
@@ -29,7 +30,7 @@ class UserService {
   }
 
   async whoAmI(context: Context) {
-    const user = await this.findUserFromContext(context.userId);
+    const user = await this.getUserFromContext(context.userId);
 
     if (!user) {
       throw new ApolloError('Invalid userId');
@@ -124,7 +125,7 @@ class UserService {
   }
 
   async removeUser(input: RemoveUserInput, context: Context) {
-    const user = await this.findUserFromContext(context.userId);
+    const user = await this.getUserFromContext(context.userId);
 
     if (!user) {
       throw new ApolloError('Cannot remove user');
@@ -178,18 +179,40 @@ class UserService {
 
     user.password = input.password;
     await user.save();
-    await redis.del(token)
+    await redis.del(token);
 
     return true;
   }
 
   async updateUser(input: UpdateUserInput, context: Context) {
-    const user = await this.findUserFromContext(context.userId);
+    const user = await this.getUserFromContext(context.userId);
 
     if (!user) {
       throw new ApolloError('Cannot update user');
     }
     await user.updateOne({ ...input });
+
+    return true;
+  }
+
+  async changePassword(input: ChangePasswordInput, context: Context) {
+    const user = await this.getUserFromContext(context.userId);
+
+    if (!user) {
+      throw new ApolloError('Cannot update user');
+    }
+
+    const passwordIsValid = await bcrypt.compare(
+      input.oldPassword,
+      user.password,
+    );
+
+    if (!passwordIsValid) {
+      return false;
+    }
+
+    user.password = input.newPassword;
+    await user.save();
 
     return true;
   }
