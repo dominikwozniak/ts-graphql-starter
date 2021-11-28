@@ -11,6 +11,7 @@ import { redis } from '../utils/redis/redis';
 import { generateConfirmToken } from '../utils/generate-confirm-token';
 import { sendEmail } from '../utils/mail/sendEmail';
 import { createConfirmUserUrl } from '../utils/mail/create-confirm-user-url';
+import log from '../logger';
 
 class UserService {
   async whoAmI(context: Context) {
@@ -84,7 +85,7 @@ class UserService {
     return new Promise((res, rej) =>
       context.req.session!.destroy((err) => {
         if (err) {
-          console.log(err);
+          log.error(err);
           return rej(false);
         }
 

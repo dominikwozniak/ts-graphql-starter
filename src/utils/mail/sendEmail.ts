@@ -1,12 +1,12 @@
 import * as nodemailer from 'nodemailer';
+import log from '../../logger';
 
 export async function sendEmail(
   email: string,
   url: string,
   subject = 'Test mail',
 ) {
-  // TODO: replace with logger
-  console.log(`Send email to ${email} and url ${url}`);
+  log.info(`Send email to ${email} and url ${url}`);
 
   const testAccount = await nodemailer.createTestAccount();
 
@@ -27,6 +27,6 @@ export async function sendEmail(
     text: url,
   });
 
-  console.log(`Message sent: ${info.messageId}`);
-  console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+  log.info(`Message sent: ${info.messageId}`);
+  log.info(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
 }

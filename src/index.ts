@@ -12,6 +12,7 @@ import {
   ApolloServerPluginLandingPageGraphQLPlayground,
   ApolloServerPluginLandingPageProductionDefault,
 } from 'apollo-server-core';
+import log from './logger';
 import { resolvers } from './resolvers';
 import { connectToMongo } from './utils/mongo/mongo';
 import { store } from './utils/mongo/mongo-session';
@@ -73,7 +74,7 @@ async function bootstrap() {
   server.applyMiddleware({ app, cors: false });
 
   app.listen({ port: 4000 }, () => {
-    console.log('App is listening on http://localhost:4000');
+    log.info('App is listening on http://localhost:4000');
   });
 
   connectToMongo();
@@ -81,5 +82,5 @@ async function bootstrap() {
 
 bootstrap()
   .catch((err) => {
-    console.error(err);
+    log.error(err);
   });
